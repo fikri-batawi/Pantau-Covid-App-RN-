@@ -188,32 +188,35 @@ Home = ({ navigation }) => {
     )
 }
 Detail = ({ navigation, route }) => {
-    const [dataKemarin, setdataKemarin] = useState({
-        positif: 2092,
-        sembuh: 150,
-        meninggal: 191
-    })
-    const [dataSekarang, setdataSekarang] = useState([])
-    const [dataUpdate, setdataUpdate] = useState({
-        positif: 106,
-        sembuh: 16,
-        meninggal: 10
-    })
+    const [dataSekarang, setdataSekarang] = useState({})
+    const [dataUpdate, setdataUpdate] = useState({})
 
     if (route.params.nama == "Indonesia") {
         useEffect(() => {
-            fetch('https://api.kawalcorona.com/indonesia')
+            const startTime = 1583107200000 // Timestamp 2 Maret
+            const day       = 86400000 // Penambahan per hari
+            var today       = new Date().getTime();
+            var selisih     = Math.round((today - startTime) / day);
+
+            fetch('https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/Statistik_Perkembangan_Kasus_COVID19_Indonesia_Februari_2021/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json')
                 .then((response) => response.json())
                 .then((json) => {
-                    // setdataSekarang(json[0])
-                    setdataSekarang({
-                        name: json[0].name,
-                        positif: Number(json[0].positif.replace(',', '')),
-                        sembuh: Number(json[0].sembuh.replace(',', '')),
-                        meninggal: Number(json[0].meninggal.replace(',', ''))
-                    })
+                    json.features.forEach(data => {
+                        if(data.attributes.Hari_ke == selisih){
+                            setdataSekarang({
+                                positif: data.attributes.Jumlah_Kasus_Kumulatif,
+                                sembuh: data.attributes.Jumlah_Pasien_Sembuh,
+                                meninggal: data.attributes.Jumlah_Pasien_Meninggal
+                            })
+                            setdataUpdate({
+                                positif: data.attributes.Jumlah_Kasus_Baru_per_Hari,
+                                sembuh: data.attributes.Jumlah_Kasus_Sembuh_per_Hari,
+                                meninggal: data.attributes.Jumlah_Kasus_Meninggal_per_Hari
+                            })
+                        }
+                    });
                 })
-        });
+        },[]);
     } else {
         useEffect(() => {
             fetch('https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/COVID19_Indonesia_per_Provinsi/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json')
@@ -233,30 +236,7 @@ Detail = ({ navigation, route }) => {
         });
     }
 
-    if (dataSekarang.positif != undefined) {
-
-
-        if (dataSekarang.positif != dataKemarin.positif ||
-            dataSekarang.sembuh != dataKemarin.sembuh ||
-            dataSekarang.meninggal != dataKemarin.meninggal) {
-
-            setdataUpdate({
-                positif: dataSekarang.positif - dataKemarin.positif,
-                sembuh: dataSekarang.sembuh - dataKemarin.sembuh,
-                meninggal: dataSekarang.meninggal - dataKemarin.meninggal
-            })
-            setdataKemarin({
-                positif: dataSekarang.positif,
-                sembuh: dataSekarang.sembuh,
-                meninggal: dataSekarang.meninggal
-            })
-        }
-    }
-
-
-
-
-
+   
     return (
         <View
             style={{
@@ -265,7 +245,7 @@ Detail = ({ navigation, route }) => {
                 padding: (windowWidth / 10 - 16),
             }}>
             <Header_home
-                title={dataSekarang.name}
+                title="Indonesia"
                 sub_title={day} />
 
             <Banner_detail
