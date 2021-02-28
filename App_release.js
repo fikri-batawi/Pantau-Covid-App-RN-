@@ -216,10 +216,10 @@ Detail = ({ navigation, route }) => {
         });
     } else {
         useEffect(() => {
-            fetch('https://api.kawalcorona.com/indonesia/provinsi')
+            fetch('https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/COVID19_Indonesia_per_Provinsi/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json')
                 .then((response) => response.json())
                 .then((json) => {
-                    json.map(data => {
+                    json.features.map(data => {
                         if (data.attributes.Provinsi == route.params.data) {
                             setdataSekarang({
                                 name: data.attributes.Provinsi,
@@ -281,23 +281,29 @@ Detail = ({ navigation, route }) => {
                 title="Meninggal"
                 value={dataSekarang.meninggal} />
 
-            <Header_home
-                title="Kasus baru"
-                sub_title={tanggal} />
+            {
+                route.params.nama == "Indonesia" &&
+                <View>
+                    <Header_home
+                        title="Kasus baru"
+                        sub_title={tanggal} />
 
-            <Banner_detail
-                title="Positif"
-                value={dataUpdate.positif} />
-
-
-            <Banner_detail
-                title="Sembuh"
-                value={dataUpdate.sembuh} />
+                    <Banner_detail
+                        title="Positif"
+                        value={dataUpdate.positif} />
 
 
-            <Banner_detail
-                title="Meninggal"
-                value={dataUpdate.meninggal} />
+                    <Banner_detail
+                        title="Sembuh"
+                        value={dataUpdate.sembuh} />
+
+
+                    <Banner_detail
+                        title="Meninggal"
+                        value={dataUpdate.meninggal} />
+                </View>
+            }
+
 
             <TouchableOpacity
                 onPress={() => navigation.goBack()}
@@ -324,39 +330,44 @@ Detail_wilayah = ({ navigation }) => {
     const [data, setData] = useState([]);
 
     useEffect(() => {
-        fetch('https://api.kawalcorona.com/indonesia/provinsi')
+        fetch('https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/COVID19_Indonesia_per_Provinsi/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json')
             .then((response) => response.json())
-            .then((json) => setData(json))
-    });
+            .then((json) => {
+                setData(json.features)
+            })
+    }, []);
 
     let buttonWilayah = <View></View>
     if (data) {
         buttonWilayah = data.map(wilayah => {
-            return (
-                <View
-                    style={{
-                        backgroundColor: 'white',
-                        marginVertical: (windowWidth / 10 - 31),
-                        padding: (windowWidth / 10 - 26),
-                        borderRadius: (windowWidth / 10 - 26),
-                    }}>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('detail', { data: wilayah.attributes.Provinsi })}
+            if (wilayah.attributes.Provinsi != "Indonesia") {
+                return (
+                    <View
+                        key={wilayah.attributes.FID}
                         style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: "center"
+                            backgroundColor: 'white',
+                            marginVertical: (windowWidth / 10 - 31),
+                            padding: (windowWidth / 10 - 26),
+                            borderRadius: (windowWidth / 10 - 26),
                         }}>
-                        <Text
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('detail', { data: wilayah.attributes.Provinsi })}
                             style={{
-                                fontSize: (windowWidth / 10 - 18),
-                            }}>{wilayah.attributes.Provinsi}</Text>
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: "center"
+                            }}>
+                            <Text
+                                style={{
+                                    fontSize: (windowWidth / 10 - 18),
+                                }}>{wilayah.attributes.Provinsi}</Text>
 
-                        <Image style={{ height: (windowWidth / 10 - 4), width: (windowWidth / 10 - 4) }} source={require('./src/img/next.png')}></Image>
+                            <Image style={{ height: (windowWidth / 10 - 4), width: (windowWidth / 10 - 4) }} source={require('./src/img/next.png')}></Image>
 
-                    </TouchableOpacity>
-                </View>
-            )
+                        </TouchableOpacity>
+                    </View>
+                )
+            }
         })
     }
     return (
