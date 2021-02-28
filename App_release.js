@@ -5,6 +5,15 @@ import { Dimensions } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 
+import {
+    LineChart,
+    BarChart,
+    PieChart,
+    ProgressChart,
+    ContributionGraph,
+    StackedBarChart
+} from "react-native-chart-kit";
+
 import { date, _back, tanggal, day } from './src/utils'
 import { ScrollView } from 'react-native-gesture-handler'
 import BeritaCuciTangan from './src/containers/pages/BeritaCuciTangan'
@@ -190,7 +199,29 @@ Home = ({ navigation }) => {
 Detail = ({ navigation, route }) => {
     const [dataSekarang, setdataSekarang] = useState({})
     const [dataUpdate, setdataUpdate] = useState({})
+    const [dataDate, setDataDate] = useState(["Mr"])
+    const [dataValue, setDataValue] = useState([10])
     const [isLoading, setIsLoading] = useState(true)
+
+    const data = {
+        labels: dataDate,
+        datasets: [
+          {
+            data: dataValue,
+            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // optional
+            strokeWidth: 2 // optional
+          }
+        ],
+        legend: ["Trand Covid-19"] // optional
+    };
+
+    const chartConfig = {
+        backgroundColor: "white",
+        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+        strokeWidth: 2, // optional, default 3
+        useShadowColorFromDataset: false, // optional
+        decimalPlaces:0,
+    };
 
     if (route.params.nama == "Indonesia") {
         useEffect(() => {
@@ -200,24 +231,42 @@ Detail = ({ navigation, route }) => {
             var selisih     = Math.round((today - startTime) / day);
 
             fetch('https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/Statistik_Perkembangan_Kasus_COVID19_Indonesia_Februari_2021/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json')
-                .then((response) => response.json())
-                .then((json) => {
-                    json.features.forEach(data => {
-                        if(data.attributes.Hari_ke == selisih){
-                            setdataSekarang({
-                                positif: data.attributes.Jumlah_Kasus_Kumulatif,
-                                sembuh: data.attributes.Jumlah_Pasien_Sembuh,
-                                meninggal: data.attributes.Jumlah_Pasien_Meninggal
-                            })
-                            setdataUpdate({
-                                positif: data.attributes.Jumlah_Kasus_Baru_per_Hari,
-                                sembuh: data.attributes.Jumlah_Kasus_Sembuh_per_Hari,
-                                meninggal: data.attributes.Jumlah_Kasus_Meninggal_per_Hari
-                            })
+            .then((response) => response.json())
+            .then((json) => {
+                let arr_date = []
+                let arr_val  = []
+                for (let index = 4; index >= 0; index--) {
+                    json.features.forEach(data=>{
+                        if(data.attributes.Hari_ke == selisih - index){
+                            const timestamp = data.attributes.Tanggal
+                            let date = new Date(timestamp).toLocaleString()
+                            let dateSlice = date.split(" ")
+                            date = dateSlice[1] + " " + dateSlice[dateSlice.length - 3]
+    
+                            arr_date.push(date)
+                            arr_val.push(data.attributes.Jumlah_Kasus_Kumulatif)
                         }
-                        setIsLoading(false)
-                    });
-                })
+                    })
+                }
+                setDataDate(arr_date)
+                setDataValue(arr_val)
+
+                json.features.forEach(data => {
+                    if(data.attributes.Hari_ke == selisih){
+                        setdataSekarang({
+                            positif: data.attributes.Jumlah_Kasus_Kumulatif,
+                            sembuh: data.attributes.Jumlah_Pasien_Sembuh,
+                            meninggal: data.attributes.Jumlah_Pasien_Meninggal
+                        })
+                        setdataUpdate({
+                            positif: data.attributes.Jumlah_Kasus_Baru_per_Hari,
+                            sembuh: data.attributes.Jumlah_Kasus_Sembuh_per_Hari,
+                            meninggal: data.attributes.Jumlah_Kasus_Meninggal_per_Hari
+                        })
+                    }
+                    setIsLoading(false)
+                });
+            })
         },[]);
     } else {
         useEffect(() => {
@@ -241,11 +290,11 @@ Detail = ({ navigation, route }) => {
 
    
     return (
-        <View
+        <ScrollView
             style={{
-                flex: 1,
+                flexGrow: 1,
                 backgroundColor: '#f3f2f2',
-                padding: (windowWidth / 10 - 16),
+                paddingHorizontal:20,
             }}>
             <Header_home
                 title="Indonesia"
@@ -284,6 +333,17 @@ Detail = ({ navigation, route }) => {
                     <Banner_detail
                         title="Meninggal"
                         value={dataUpdate.meninggal} />
+
+                    <View style={{
+                        marginVertical:32,
+                    }}>
+                        <LineChart
+                            data={data}
+                            width={windowWidth}
+                            height={220}
+                            chartConfig={chartConfig}
+                        />
+                    </View>
                 </View>
             }
 
@@ -296,6 +356,7 @@ Detail = ({ navigation, route }) => {
                     marginTop: (windowWidth / 10 - 16),
                     alignItems: 'center',
                     borderRadius: (windowWidth / 10 - 28),
+                    marginBottom:32,
                 }}>
                 <Text
                     style={{
@@ -305,7 +366,7 @@ Detail = ({ navigation, route }) => {
             </TouchableOpacity>
 
             {isLoading && <Loader />}
-        </View>
+        </ScrollView>
     )
 
 }
@@ -511,6 +572,35 @@ Info_covid = ({ navigation }) => {
 
                     </TouchableOpacity>
                 </View>
+                <View
+                    style={{
+                        backgroundColor: '#F7A559',
+                        marginVertical: (windowWidth / 10 - 31),
+                        padding: (windowWidth / 10 - 26),
+                        borderRadius: (windowWidth / 10 - 26),
+                    }}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('webview-rs')}
+                        style={{
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            // alignItems: "center",
+                            padding: (windowWidth / 10 - 31),
+                        }}>
+                        <Text
+                            style={{
+                                fontSize: (windowWidth / 10 - 18),
+                                color: 'white'
+                            }}>Informasi ketersediaan bed rumah sakit provinsi DKI Jakarta</Text>
+
+                        <Text
+                            style={{
+                                color: 'white',
+                                marginTop: (windowWidth / 10 - 16)
+                            }}>eis.dinkes.jakarta.go.id/eis</Text>
+
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </View>
     )
@@ -532,6 +622,14 @@ Loader = () => {
             <ActivityIndicator color="#000" size="large" />
             <Text style={{marginTop:32}}>Please Wait</Text>
             <Text>Loading Data ...</Text>
+        </View>
+    )
+}
+
+WebviewInfo = () => {
+    return(
+        <View>
+            <Text>Info bed rs</Text>
         </View>
     )
 }
@@ -561,6 +659,7 @@ export default class App_release extends Component {
                     <stack.Screen name="berita-daftar-rs" component={BeritaDaftarRs} />
                     <stack.Screen name="berita-mengurangi-resiko" component={BeritaMengurangiResiko} />
                     <stack.Screen name="berita-ketika-sakit" component={BeritaKetikaSakit} />
+                    <stack.Screen name="webview-rs" component={WebviewInfo} />
                 </stack.Navigator>
             </NavigationContainer>
         )
