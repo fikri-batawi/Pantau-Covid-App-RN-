@@ -1,5 +1,5 @@
 import React, { Component, useState, useEffect } from 'react'
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { Dimensions } from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native'
@@ -190,6 +190,7 @@ Home = ({ navigation }) => {
 Detail = ({ navigation, route }) => {
     const [dataSekarang, setdataSekarang] = useState({})
     const [dataUpdate, setdataUpdate] = useState({})
+    const [isLoading, setIsLoading] = useState(true)
 
     if (route.params.nama == "Indonesia") {
         useEffect(() => {
@@ -214,6 +215,7 @@ Detail = ({ navigation, route }) => {
                                 meninggal: data.attributes.Jumlah_Kasus_Meninggal_per_Hari
                             })
                         }
+                        setIsLoading(false)
                     });
                 })
         },[]);
@@ -232,6 +234,7 @@ Detail = ({ navigation, route }) => {
                             });
                         }
                     })
+                    setIsLoading(false)
                 })
         });
     }
@@ -301,6 +304,7 @@ Detail = ({ navigation, route }) => {
                     }}>Kembali</Text>
             </TouchableOpacity>
 
+            {isLoading && <Loader />}
         </View>
     )
 
@@ -308,12 +312,13 @@ Detail = ({ navigation, route }) => {
 Detail_wilayah = ({ navigation }) => {
 
     const [data, setData] = useState([]);
-
+    const [isLoading, setIsLoading] = useState(true)
     useEffect(() => {
         fetch('https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/COVID19_Indonesia_per_Provinsi/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json')
             .then((response) => response.json())
             .then((json) => {
                 setData(json.features)
+                setIsLoading(false)
             })
     }, []);
 
@@ -348,7 +353,7 @@ Detail_wilayah = ({ navigation }) => {
                     </View>
                 )
             }
-        })
+        },()=>setIsLoading(false))
     }
     return (
         <View
@@ -369,6 +374,8 @@ Detail_wilayah = ({ navigation }) => {
                 {buttonWilayah}
 
             </ScrollView>
+            {isLoading && <Loader />}
+
         </View>
     )
 }
@@ -509,7 +516,25 @@ Info_covid = ({ navigation }) => {
     )
 }
 
-
+Loader = () => {
+    return(
+        <View style={{
+            flex:1,
+            position:'absolute',
+            top:0,
+            left:0,
+            bottom:0,
+            right:0,
+            backgroundColor:'#fff',
+            alignItems:'center',
+            justifyContent:'center',
+        }}>
+            <ActivityIndicator color="#000" size="large" />
+            <Text style={{marginTop:32}}>Please Wait</Text>
+            <Text>Loading Data ...</Text>
+        </View>
+    )
+}
 
 const styles = StyleSheet.create({
     text: {
