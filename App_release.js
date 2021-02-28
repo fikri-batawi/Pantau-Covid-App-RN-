@@ -1,6 +1,7 @@
 import React, { Component, useState, useEffect } from 'react'
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { Dimensions } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
@@ -628,9 +629,9 @@ Loader = () => {
 
 WebviewInfo = () => {
     return(
-        <View>
-            <Text>Info bed rs</Text>
-        </View>
+        <WebView
+            source={{ uri: 'http://eis.dinkes.jakarta.go.id/eis/' }}
+        />
     )
 }
 
